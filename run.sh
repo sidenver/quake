@@ -4,8 +4,8 @@
 #SBATCH --mem-per-cpu=2048
 #SBATCH --exclusive
 
-OMP_NUM_THREADS=$SLURM_NTASKS
+OMP_NUM_THREADS=1
 echo $OMP_NUM_THREADS
 export OMP_NUM_THREADS
 
-./quake quake.in
+./quake quake.in.short
