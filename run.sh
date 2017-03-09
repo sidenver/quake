@@ -3,6 +3,7 @@
 #SBATCH -t 00:10:00
 #SBATCH --mem-per-cpu=2048
 #SBATCH --share
+#SBATCH -p debug
 
 OMP_NUM_THREADS==$SLURM_NTASKS
 echo $OMP_NUM_THREADS
