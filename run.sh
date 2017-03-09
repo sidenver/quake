@@ -8,4 +8,4 @@ OMP_NUM_THREADS==$SLURM_NTASKS
 echo $OMP_NUM_THREADS
 export OMP_NUM_THREADS
 
-./quake quake.in
+./quake quake.in &> quake.log
