@@ -5,8 +5,8 @@
 #SBATCH --share
 #SBATCH -p debug
 
-OMP_NUM_THREADS=$SLURM_NTASKS
+OMP_NUM_THREADS=1
 echo $OMP_NUM_THREADS
 export OMP_NUM_THREADS
 
-./quake quake.in &> quake.log
+quake.in > ./quake &> quake.log
