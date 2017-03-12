@@ -322,8 +322,8 @@ int main(int argc, char **argv)
     }
     }
     clock_t end_omp = clock();
-    double time_spent = (double)(end_omp - begin_omp) / CLOCKS_PER_SEC;
-    fprintf(stderr, "Time OMP: %f\n", time_spent);
+    double time_spent_omp = (double)(end_omp - begin_omp) / CLOCKS_PER_SEC;
+    fprintf(stderr, "Time OMP: %f\n", time_spent_omp);
     
     d1=bigdist1[0];
     d2=bigdist2[0];
