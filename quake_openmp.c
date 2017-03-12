@@ -1284,7 +1284,7 @@ void smvp(int nodes, double (*A)[3][3], int *Acol, int *Aindex,
     }
   }
 
-#pragma omp parallel private(my_cpu_id,i,Anext,Alast,col,sum0,sum1,sum2)
+#pragma omp parallel private(my_cpu_id,Anext,Alast,col,sum0,sum1,sum2)
 {
 #ifdef _OPENMP
   my_cpu_id = omp_get_thread_num();
