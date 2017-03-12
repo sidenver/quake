@@ -300,8 +300,7 @@ clock_t begin_omp = clock();
      temp2[my_cpu_id]=-1;
      bigdist1[my_cpu_id]=1000000.0;
      bigdist2[my_cpu_id]=1000000.0;
-
-     #pragma omp for
+}
      for (i = 0; i < ARCHnodes; i++) {
         c0[0] = ARCHcoord[i][0];
         c0[1] = ARCHcoord[i][1];
@@ -319,10 +318,10 @@ clock_t begin_omp = clock();
            temp2[my_cpu_id] = i;
        }
     }
-}    
+
     clock_t end_omp = clock();
     double time_spent_omp = (double)(end_omp - begin_omp) / CLOCKS_PER_SEC;
-    fprintf(stderr, "Time OMP: %f\n", time_spent_omp);
+    printf("Time OMP: %f\n", time_spent_omp);
     
     d1=bigdist1[0];
     d2=bigdist2[0];
@@ -600,7 +599,7 @@ clock_t begin_omp = clock();
 
   clock_t end = clock();
   double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-  fprintf(stderr, "Time: %f\n", time_spent);
+  printf("Time: %f\n", time_spent);
   return 0;
 }
 /* --------------------------------------------------------------------------*/
@@ -1292,8 +1291,8 @@ void smvp(int nodes, double (*A)[3][3], int *Acol, int *Aindex,
 #else
    my_cpu_id=0;
 #endif
-}
 
+  #pragma omp for
   for (i = 0; i < nodes; i++) {
     Anext = Aindex[i];
     Alast = Aindex[i + 1];
@@ -1334,6 +1333,7 @@ void smvp(int nodes, double (*A)[3][3], int *Acol, int *Aindex,
     w1[my_cpu_id][i].second += sum1;
     w1[my_cpu_id][i].third += sum2;
   }
+}
 
   for (i = 0; i < nodes; i++) {
     for (j = 0; j < numthreads; j++) {
