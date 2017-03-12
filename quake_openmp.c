@@ -288,7 +288,7 @@ int main(int argc, char **argv)
     exit(0);
   }
 
-clock_t begin_omp = clock();
+// clock_t begin_omp = clock();
 #pragma omp parallel private(my_cpu_id,d1,d2,c0) 
 {
 #ifdef _OPENMP
@@ -319,9 +319,9 @@ clock_t begin_omp = clock();
        }
     }
 
-    clock_t end_omp = clock();
-    double time_spent_omp = (double)(end_omp - begin_omp) / CLOCKS_PER_SEC;
-    printf("Time OMP: %f\n", time_spent_omp);
+    // clock_t end_omp = clock();
+    // double time_spent_omp = (double)(end_omp - begin_omp) / CLOCKS_PER_SEC;
+    // printf("Time OMP: %f\n", time_spent_omp);
     
     d1=bigdist1[0];
     d2=bigdist2[0];
@@ -1284,15 +1284,15 @@ void smvp(int nodes, double (*A)[3][3], int *Acol, int *Aindex,
     }
   }
 
-#pragma omp parallel private(my_cpu_id,Anext,Alast,col,sum0,sum1,sum2)
+#pragma omp parallel private(my_cpu_id,i,Anext,Alast,col,sum0,sum1,sum2)
 {
 #ifdef _OPENMP
   my_cpu_id = omp_get_thread_num();
 #else
    my_cpu_id=0;
 #endif
+}
 
-  #pragma omp for
   for (i = 0; i < nodes; i++) {
     Anext = Aindex[i];
     Alast = Aindex[i + 1];
@@ -1333,7 +1333,7 @@ void smvp(int nodes, double (*A)[3][3], int *Acol, int *Aindex,
     w1[my_cpu_id][i].second += sum1;
     w1[my_cpu_id][i].third += sum2;
   }
-}
+
 
   for (i = 0; i < nodes; i++) {
     for (j = 0; j < numthreads; j++) {
