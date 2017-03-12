@@ -288,6 +288,7 @@ int main(int argc, char **argv)
     exit(0);
   }
 
+clock_t begin_omp = clock();
 #pragma omp parallel private(my_cpu_id,d1,d2,c0) 
 {
 #ifdef _OPENMP
@@ -299,10 +300,8 @@ int main(int argc, char **argv)
      temp2[my_cpu_id]=-1;
      bigdist1[my_cpu_id]=1000000.0;
      bigdist2[my_cpu_id]=1000000.0;
-}
-     clock_t begin_omp = clock();
-     #pragma omp parallel for private(c0, d1, d2, my_cpu_id)
-     {
+
+     #pragma omp for
      for (i = 0; i < ARCHnodes; i++) {
         c0[0] = ARCHcoord[i][0];
         c0[1] = ARCHcoord[i][1];
@@ -320,7 +319,7 @@ int main(int argc, char **argv)
            temp2[my_cpu_id] = i;
        }
     }
-    }
+}    
     clock_t end_omp = clock();
     double time_spent_omp = (double)(end_omp - begin_omp) / CLOCKS_PER_SEC;
     fprintf(stderr, "Time OMP: %f\n", time_spent_omp);
