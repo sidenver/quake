@@ -1335,19 +1335,19 @@ void smvp(int nodes, double (*A)[3][3], int *Acol, int *Aindex,
     w1[my_cpu_id][i].first += sum0;
     w1[my_cpu_id][i].second += sum1;
     w1[my_cpu_id][i].third += sum2;
-  // }
+  }
 
   
   
-  // for (i = 0; i < nodes; i++) {
-    //if (w2[my_cpu_id][i]) {
+  for (i = 0; i < nodes; i++) {
+    if (w2[my_cpu_id][i]) {
     #pragma omp critical
     {
 	w[i][0] += w1[my_cpu_id][i].first;
 	w[i][1] += w1[my_cpu_id][i].second;
 	w[i][2] += w1[my_cpu_id][i].third;
     }  
-  //}
+  }
   }
   }
 }
