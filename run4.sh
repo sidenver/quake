@@ -3,7 +3,7 @@
 #SBATCH -t 00:03:00
 #SBATCH --mem-per-cpu=2048
 #SBATCH --share
-
+#SBATCH -p debug
 
 OMP_NUM_THREADS=4
 echo $OMP_NUM_THREADS
