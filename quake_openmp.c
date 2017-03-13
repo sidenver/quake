@@ -1282,7 +1282,7 @@ if (Src.sourcenode != 0) {
                 #else
                   my_cpu_id=0;
                 #endif
-                #pragma omp for private(i,Anext,Alast,col,sum0,sum1,sum2) shared(nodes) 
+                #pragma omp for private(i,Anext,Alast,col,sum0,sum1,sum2)
                 for (i = 0; i < nodes; i++) {
                   Anext = Aindex[i];
                   Alast = Aindex[i + 1];
