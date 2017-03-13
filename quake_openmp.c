@@ -293,7 +293,7 @@ int main(int argc, char **argv)
      temp2[my_cpu_id]=-1;
      bigdist1[my_cpu_id]=1000000.0;
      bigdist2[my_cpu_id]=1000000.0;
-#pragma omp for private(i,d1,d2,c0) firstprivate(ARCHnodes,bigdist1,bigdist2) 
+#pragma omp for private(i,d1,d2,c0)// firstprivate(ARCHnodes,bigdist1,bigdist2) 
      for (i = 0; i < ARCHnodes; i++) {
         c0[0] = ARCHcoord[i][0];
         c0[1] = ARCHcoord[i][1];
@@ -356,23 +356,23 @@ int main(int argc, char **argv)
 /* Search for all the elements that contain the source node */
 
   if (Src.sourcenode != 0) {
-#pragma omp parallel for private(i,j,k,vertices,xc,cor) firstprivate(ARCHelems)
+    #pragma omp parallel for private(i,j,k,vertices,xc,cor) firstprivate(ARCHelems)
     for (i = 0; i < ARCHelems; i++) {
       for (j = 0; j < 4; j++)
         cor[j] = ARCHvertex[i][j];
 
-      if (cor[0] == Src.sourcenode || cor[1] == Src.sourcenode ||
-    cor[2] == Src.sourcenode || cor[3] == Src.sourcenode) {
+        if (cor[0] == Src.sourcenode || cor[1] == Src.sourcenode ||
+            cor[2] == Src.sourcenode || cor[3] == Src.sourcenode) {
 
-  for (j = 0; j < 4; j++)
-    for (k = 0; k < 3; k++)
-      vertices[j][k] = ARCHcoord[cor[j]][k];
+          for (j = 0; j < 4; j++)
+            for (k = 0; k < 3; k++)
+              vertices[j][k] = ARCHcoord[cor[j]][k];
 
-        centroid(vertices, xc);
+          centroid(vertices, xc);
 
-        source_elms[i] = 2;
-        if (point2fault(xc) >= 0) 
-    source_elms[i] = 3;
+          source_elms[i] = 2;
+          if (point2fault(xc) >= 0) 
+            source_elms[i] = 3;
 
       }
     }

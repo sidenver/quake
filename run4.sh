@@ -6,7 +6,7 @@
 #SBATCH -p debug
 
 OMP_NUM_THREADS=4
-echo $OMP_NUM_THREADS
 export OMP_NUM_THREADS
 
+gcc -fopenmp -o quake quake_openmp.c -lm
 ./quake < quake.in > quake4.log
