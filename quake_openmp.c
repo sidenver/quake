@@ -1267,7 +1267,7 @@ if (Src.sourcenode != 0) {
                 int i,j;
                 int Anext, Alast, col;
                 double sum0, sum1, sum2;
-                #pragma omp parallel for private(i,j) collapse(2) shared(w2,numthreads,nodes) //firstprivate(numthreads,nodes) 
+                #pragma omp parallel for private(i,j) collapse(2) shared(w2,numthreads,nodes)
                 for (j = 0; j < numthreads; j++) {
                   for (i = 0; i < nodes; i++) {
                     w2[j][i] = 0;
