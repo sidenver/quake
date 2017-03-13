@@ -1292,7 +1292,7 @@ void smvp(int nodes, double (*A)[3][3], int *Acol, int *Aindex,
    my_cpu_id=0;
 #endif
 }
-
+//#pragma omp for schedule(dynamic) reduction (+: w1[my_cpu_id]) 
   for (i = 0; i < nodes; i++) {
     Anext = Aindex[i];
     Alast = Aindex[i + 1];
