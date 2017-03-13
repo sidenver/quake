@@ -1291,8 +1291,11 @@ void smvp(int nodes, double (*A)[3][3], int *Acol, int *Aindex,
 #else
    my_cpu_id=0;
 #endif
-}
-//#pragma omp for schedule(dynamic) reduction (+: w1[my_cpu_id]) 
+
+  // double* w1First = (double *) malloc(nodes * sizeof(double));
+  // double* w1Second = (double *) malloc(nodes * sizeof(double));
+  // double* w1Third = (double *) malloc(nodes * sizeof(double));
+  #pragma omp for schedule(dynamic)
   for (i = 0; i < nodes; i++) {
     Anext = Aindex[i];
     Alast = Aindex[i + 1];
@@ -1334,15 +1337,16 @@ void smvp(int nodes, double (*A)[3][3], int *Acol, int *Aindex,
     w1[my_cpu_id][i].third += sum2;
   }
 
-
+  #pragma omp critical
+  {
   for (i = 0; i < nodes; i++) {
-    for (j = 0; j < numthreads; j++) {
-      if (w2[j][i]) {
-	w[i][0] += w1[j][i].first;
-	w[i][1] += w1[j][i].second;
-	w[i][2] += w1[j][i].third;
-      }
-    }
+    if (w2[my_cpu_id][i]) {
+	w[i][0] += w1[my_cpu_id][i].first;
+	w[i][1] += w1[my_cpu_id][i].second;
+	w[i][2] += w1[my_cpu_id][i].third;
+    }  
+  }
+  }
   }
 }
 
