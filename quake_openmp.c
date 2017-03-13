@@ -9,11 +9,10 @@
 #include <math.h>
 #include <string.h>
 #include <omp.h>
-#include <time.h>
 
 #define AMAX_NAME  128
 
-#ifndef PI
+#ifndef PI                   
 #  define PI 3.141592653589793238
 #endif
 
@@ -92,9 +91,8 @@ double **ARCHcoord;
 int **ARCHvertex;
 int *ARCHmatrixcol;
 int *ARCHmatrixindex;
-
+double tic,toc,tic1,toc1;
 /* functions */
-
 void arch_init(int argc, char **argv, struct options *op);
 void mem_init(void);
 void arch_readnodevector(double *v, int n);
@@ -103,15 +101,15 @@ double distance(double p1[], double p2[]);
 void centroid(double x[][3], double xc[]);
 double point2fault(double x[]);
 void abe_matrix(double vertices[][3], int bv[],
-		struct properties *prop, double Ce[]);
+    struct properties *prop, double Ce[]);
 void element_matrices(double vertices[][3], struct properties *prop,
-		      double Ke[][12], double Me[]);
+          double Ke[][12], double Me[]);
 void vv12x12(double v1[], double v2[], double u[]);
 void mv12x12(double m[][12], double v[]);
 void smvp(int nodes, double (*A)[3][3], int *Acol, int *Aindex,
-		double (*v)[3], double (*w)[3]);
+    double (*v)[3], double (*w)[3]);
 void smvp_opt(int nodes, double (*A)[3][3], int *Acol, int *Aindex,
-		double (*v)[3], double (*w)[3]);
+    double (*v)[3], double (*w)[3]);
 
 double phi0(double t);
 double phi1(double t);
@@ -136,9 +134,7 @@ struct damping Damp;
 /*--------------------------------------------------------------------------*/ 
 
 int main(int argc, char **argv)
-{
-  clock_t begin = clock();
-
+{ tic=omp_get_wtime();
   int i, j, k, ii, jj, kk, iter, timesteps;
   int disptplus, dispt, disptminus;
   int verticesonbnd;
@@ -154,7 +150,6 @@ int main(int argc, char **argv)
   struct properties prop;
 
 /* NOTE: There are 5 possible flag values for the node data:
-
            1 if the node is in the interior 
            4 if the node is on a x=const boundary surface
            5 if the node is on a y=const boundary surface
@@ -246,7 +241,7 @@ int main(int argc, char **argv)
   fprintf(stderr, "                  rake: %f\n", Src.rake);
   fprintf(stderr, "           dislocation: %f cm\n", Src.fault);
   fprintf(stderr, "Hypocenter: (%f, %f, %f) Km\n", 
-	  Src.xyz[0], Src.xyz[1], Src.xyz[2]);
+    Src.xyz[0], Src.xyz[1], Src.xyz[2]);
   fprintf(stderr, "Excitation characteristics\n");
   fprintf(stderr, "     Time step: %f sec\n", Exc.dt);
   fprintf(stderr, "      Duration: %f sec\n", Exc.duration);
@@ -287,9 +282,7 @@ int main(int argc, char **argv)
     fflush(stderr);
     exit(0);
   }
-
-// clock_t begin_omp = clock();
-#pragma omp parallel private(my_cpu_id,d1,d2,c0) 
+#pragma omp parallel private(my_cpu_id) shared(ARCHcoord)
 {
 #ifdef _OPENMP
      my_cpu_id=omp_get_thread_num();
@@ -300,7 +293,7 @@ int main(int argc, char **argv)
      temp2[my_cpu_id]=-1;
      bigdist1[my_cpu_id]=1000000.0;
      bigdist2[my_cpu_id]=1000000.0;
-}
+#pragma omp for private(i,d1,d2,c0) firstprivate(ARCHnodes,bigdist1,bigdist2) 
      for (i = 0; i < ARCHnodes; i++) {
         c0[0] = ARCHcoord[i][0];
         c0[1] = ARCHcoord[i][1];
@@ -319,10 +312,8 @@ int main(int argc, char **argv)
        }
     }
 
-    // clock_t end_omp = clock();
-    // double time_spent_omp = (double)(end_omp - begin_omp) / CLOCKS_PER_SEC;
-    // printf("Time OMP: %f\n", time_spent_omp);
-    
+  }
+
     d1=bigdist1[0];
     d2=bigdist2[0];
     Src.sourcenode=temp1[0];
@@ -346,56 +337,56 @@ int main(int argc, char **argv)
 
   if (Src.sourcenode != 0 && Src.sourcenode <= ARCHmine) {
     fprintf(stderr, "The source is node %d at (%f  %f  %f)\n", 
-	    ARCHglobalnode[Src.sourcenode], 
-	    ARCHcoord[Src.sourcenode][0],
-	    ARCHcoord[Src.sourcenode][1],
-	    ARCHcoord[Src.sourcenode][2]);
+      ARCHglobalnode[Src.sourcenode], 
+      ARCHcoord[Src.sourcenode][0],
+      ARCHcoord[Src.sourcenode][1],
+      ARCHcoord[Src.sourcenode][2]);
     fflush(stderr);
   }
 
   if (Src.epicenternode != 0 && Src.epicenternode <= ARCHmine) {
     fprintf(stderr, "The epicenter is node %d at (%f  %f  %f)\n", 
-	    ARCHglobalnode[Src.epicenternode],
-	    ARCHcoord[Src.epicenternode][0],
-	    ARCHcoord[Src.epicenternode][1],
-	    ARCHcoord[Src.epicenternode][2]);
+      ARCHglobalnode[Src.epicenternode],
+      ARCHcoord[Src.epicenternode][0],
+      ARCHcoord[Src.epicenternode][1],
+      ARCHcoord[Src.epicenternode][2]);
     fflush(stderr);
   }
 
 /* Search for all the elements that contain the source node */
 
   if (Src.sourcenode != 0) {
-
+#pragma omp parallel for private(i,j,k,vertices,xc,cor) firstprivate(ARCHelems)
     for (i = 0; i < ARCHelems; i++) {
       for (j = 0; j < 4; j++)
         cor[j] = ARCHvertex[i][j];
 
       if (cor[0] == Src.sourcenode || cor[1] == Src.sourcenode ||
-	  cor[2] == Src.sourcenode || cor[3] == Src.sourcenode) {
+    cor[2] == Src.sourcenode || cor[3] == Src.sourcenode) {
 
-	for (j = 0; j < 4; j++)
-	  for (k = 0; k < 3; k++)
-	    vertices[j][k] = ARCHcoord[cor[j]][k];
+  for (j = 0; j < 4; j++)
+    for (k = 0; k < 3; k++)
+      vertices[j][k] = ARCHcoord[cor[j]][k];
 
         centroid(vertices, xc);
 
         source_elms[i] = 2;
         if (point2fault(xc) >= 0) 
-	  source_elms[i] = 3;
+    source_elms[i] = 3;
 
       }
     }
   }
 
 /* Simulation */
-
+  //#pragma omp parallel for private (i,j,k,ii,jj,verticesonbnd,kk,Me,Ce,v,Ke,cor,bv,vertices,xc,alpha) firstprivate(ARCHelems,prop,uf)
   for (i = 0; i < ARCHelems; i++) {
     for (j = 0; j < 12; j++) {
       Me[j] = 0.0;
       Ce[j] = 0.0;
       v[j] = 0.0;
       for (k = 0; k < 12; k++) 
-	Ke[j][k] = 0.0;
+  Ke[j][k] = 0.0;
     }
 
     for (j = 0; j < 4; j++) {
@@ -405,23 +396,23 @@ int main(int argc, char **argv)
     verticesonbnd = 0;
     for (j = 0; j < 4; j++)
       if (nodekind[cor[j]] != 1)
-	bv[verticesonbnd++] = j;
+  bv[verticesonbnd++] = j;
 
     /*
     if (verticesonbnd == 4) {
       fprintf (stderr, "Warning! 4 vertices seem to be on the boundary\n");
       for (j = 0; j < 4; j++)
-	fprintf (stderr, "%f %f %f nodekind[cor[%d]]=%d\n",
-		 ARCHcoord[cor[bv[j]]][0],
-		 ARCHcoord[cor[bv[j]]][1],
-		 ARCHcoord[cor[bv[j]]][2],j,nodekind[cor[j]]);
+  fprintf (stderr, "%f %f %f nodekind[cor[%d]]=%d\n",
+     ARCHcoord[cor[bv[j]]][0],
+     ARCHcoord[cor[bv[j]]][1],
+     ARCHcoord[cor[bv[j]]][2],j,nodekind[cor[j]]);
     }
     */
 
     if (verticesonbnd == 3) {
       for (j = 0; j < 3; j++)
-	for (k = 0; k < 3; k++)
-	  vertices[j][k] = ARCHcoord[cor[bv[j]]][k];
+  for (k = 0; k < 3; k++)
+    vertices[j][k] = ARCHcoord[cor[bv[j]]][k];
 
       abe_matrix(vertices, bv, &prop, Ce);
 
@@ -429,7 +420,7 @@ int main(int argc, char **argv)
 
     for (j = 0; j < 4; j++)
       for (k = 0; k < 3; k++)
-	vertices[j][k] = ARCHcoord[cor[j]][k];
+  vertices[j][k] = ARCHcoord[cor[j]][k];
 
     element_matrices(vertices, &prop, Ke, Me);
 
@@ -471,11 +462,11 @@ int main(int argc, char **argv)
       mv12x12(Ke, v);
 
       if (source_elms[i] == 3)
-	for (j = 0; j < 12; j++) {
-	  v[j] = - v[j];
-	  Mexv[j] = - Mexv[j];
-	  Cexv[j] = - Cexv[j];
-	}
+  for (j = 0; j < 12; j++) {
+    v[j] = - v[j];
+    Mexv[j] = - Mexv[j];
+    Cexv[j] = - Cexv[j];
+  }
 
       /* Assemble vectors3 V23, M23, C23 */
 
@@ -526,30 +517,30 @@ int main(int argc, char **argv)
   fprintf(stderr, "\n");
 
   for (iter = 1; iter <= timesteps; iter++) {
-
+  #pragma omp parallel for private(i,j) firstprivate(ARCHnodes,disptplus) 
     for (i = 0; i < ARCHnodes; i++)
       for (j = 0; j < 3; j++)
-	disp[disptplus][i][j] = 0.0;
+  disp[disptplus][i][j] = 0.0;
 
     smvp(ARCHnodes, K, ARCHmatrixcol, ARCHmatrixindex, 
-	       disp[dispt], disp[disptplus]);
+         disp[dispt], disp[disptplus]);
 
     time = iter * Exc.dt;
-
+  #pragma omp parallel for private(i,j) firstprivate(ARCHnodes,disptplus) 
     for (i = 0; i < ARCHnodes; i++)
     {
       for (j = 0; j < 3; j++)
       {
         disp[disptplus][i][j] *= - Exc.dt * Exc.dt;
         disp[disptplus][i][j] += 2.0 * M[i][j] * disp[dispt][i][j] - 
-	  (M[i][j] - Exc.dt / 2.0 * C[i][j]) * disp[disptminus][i][j] -
-	    Exc.dt * Exc.dt * (M23[i][j] * phi2(time) / 2.0 +
-			       C23[i][j] * phi1(time) / 2.0 +
-			       V23[i][j] * phi0(time) / 2.0);
+    (M[i][j] - Exc.dt / 2.0 * C[i][j]) * disp[disptminus][i][j] -
+      Exc.dt * Exc.dt * (M23[i][j] * phi2(time) / 2.0 +
+             C23[i][j] * phi1(time) / 2.0 +
+             V23[i][j] * phi0(time) / 2.0);
         disp[disptplus][i][j] = disp[disptplus][i][j] /
-	                        (M[i][j] + Exc.dt / 2.0 * C[i][j]);
+                          (M[i][j] + Exc.dt / 2.0 * C[i][j]);
         vel[i][j] = 0.5 / Exc.dt * (disp[disptplus][i][j] -
-				    disp[disptminus][i][j]);
+            disp[disptminus][i][j]);
       }
     }
 
@@ -560,16 +551,16 @@ int main(int argc, char **argv)
       fprintf(stderr, "Time step %d\n", iter);
 
       if (Src.sourcenode <= ARCHmine)
-	printf("%d: %.2e %.2e %.2e\n", ARCHglobalnode[Src.sourcenode],
-	       disp[disptplus][Src.sourcenode][0], 
-	       disp[disptplus][Src.sourcenode][1],
-	       disp[disptplus][Src.sourcenode][2]);
+  printf("%d: %.2e %.2e %.2e\n", ARCHglobalnode[Src.sourcenode],
+         disp[disptplus][Src.sourcenode][0], 
+         disp[disptplus][Src.sourcenode][1],
+         disp[disptplus][Src.sourcenode][2]);
 
       if (Src.epicenternode <= ARCHmine)
-	printf("%d: %.2e %.2e %.2e\n", ARCHglobalnode[Src.epicenternode], 
-	       disp[disptplus][Src.epicenternode][0],
-	       disp[disptplus][Src.epicenternode][1],
-	       disp[disptplus][Src.epicenternode][2]);
+  printf("%d: %.2e %.2e %.2e\n", ARCHglobalnode[Src.epicenternode], 
+         disp[disptplus][Src.epicenternode][0],
+         disp[disptplus][Src.epicenternode][1],
+         disp[disptplus][Src.epicenternode][2]);
 
       fflush(stdout);
     }
@@ -589,17 +580,16 @@ int main(int argc, char **argv)
   free (w1);
 
   fprintf(stderr, "%d nodes %d elems %d timesteps\n", 
-	  ARCHglobalnodes, ARCHglobalelems, timesteps);
+    ARCHglobalnodes, ARCHglobalelems, timesteps);
   fprintf(stderr, "\n");
   fflush(stderr);
 
   if (!options.quiet) {
     fprintf(stderr, "Done. Terminating the simulation.\n");
   }
-
-  clock_t end = clock();
-  double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-  printf("Time: %f\n", time_spent);
+  toc=omp_get_wtime();
+  printf("TotalElapsed: %f seconds\n\n", (double)(toc - tic)  );
+  printf("Elapsed: %f seconds\n\n", (double)(toc1 - tic1) );
   return 0;
 }
 /* --------------------------------------------------------------------------*/
@@ -714,7 +704,7 @@ struct properties *prop;
     for (i = 0; i < 3; i++) {
       sum[i] = 0.0;
       for (j = 0; j < 3; j++)
-	sum[i] = sum[i] + jacobian[j][i] * ds[j][m];
+  sum[i] = sum[i] + jacobian[j][i] * ds[j][m];
     }
 
     for (i = 0; i < 3; i++) 
@@ -747,15 +737,15 @@ struct properties *prop;
           if (i == j) {
             ts = ts * c1;
             tt = (ds[0][m] * ds[0][n] +
-		  ds[1][m] * ds[1][n] +
-		  ds[2][m] * ds[2][n]) * c3;
+      ds[1][m] * ds[1][n] +
+      ds[2][m] * ds[2][n]) * c3;
           }
-	  else {
+    else {
             if (m == n) {
               ts = ts * c1;
               tt = 0;
             }
-	    else {
+      else {
               ts = ts * c2;
               tt = ds[j][m] * ds[i][n] * c3;
             }
@@ -907,9 +897,9 @@ double *u, *v, *w;
 {
   *u = *v = *w = 0.0;
   *u = (cos(Src.rake) * sin(Src.strike) - 
-	sin(Src.rake) * cos(Src.strike) * cos(Src.dip));
+  sin(Src.rake) * cos(Src.strike) * cos(Src.dip));
   *v = (cos(Src.rake) * cos(Src.strike) +
-	sin(Src.rake) * sin(Src.strike) * cos(Src.dip));
+  sin(Src.rake) * sin(Src.strike) * cos(Src.dip));
   *w = sin(Src.rake) * sin(Src.dip);
 }
 /* --------------------------------------------------------------------------*/
@@ -922,8 +912,8 @@ double distance(p1, p2)
 double p1[], p2[];
 {
   return ((p1[0] - p2[0]) * (p1[0] - p2[0]) +
-	  (p1[1] - p2[1]) * (p1[1] - p2[1]) +
-	  (p1[2] - p2[2]) * (p1[2] - p2[2]));
+    (p1[1] - p2[1]) * (p1[1] - p2[1]) +
+    (p1[2] - p2[2]) * (p1[2] - p2[2]));
 }
 /* --------------------------------------------------------------------------*/
 
@@ -1039,20 +1029,20 @@ void arch_parsecommandline(int argc, char **argv, struct options *op)
 
     /* now see if the user wants to change any of these */
     for (i=1; i<argc; i++) {
-	if (argv[i][0] == '-') {
-	    for (j = 1; argv[i][j] != '\0'; j++) {
-		if (argv[i][j] == 'Q') {
-		    op->quiet = 1;
-		}
-		if ((argv[i][j] == 'h' ||argv[i][j] == 'H')) {
-		    op->help = 1;
-		}
-	    }
-	}
+  if (argv[i][0] == '-') {
+      for (j = 1; argv[i][j] != '\0'; j++) {
+    if (argv[i][j] == 'Q') {
+        op->quiet = 1;
+    }
+    if ((argv[i][j] == 'h' ||argv[i][j] == 'H')) {
+        op->help = 1;
+    }
+      }
+  }
     }
     if (op->help) {
-	arch_info();
-	exit(0);
+  arch_info();
+  exit(0);
     }
 }
 /*--------------------------------------------------------------------------*/ 
@@ -1070,17 +1060,17 @@ void arch_readnodevector(double *v, int n) {
     fscanf(packfile, "%d %d\n", &type, &attributes);
 
     if (type != 2) {
-	fprintf(stderr, 
-		"READNODEVECTOR: unexpected data type\n");
-	arch_bail();
+  fprintf(stderr, 
+    "READNODEVECTOR: unexpected data type\n");
+  arch_bail();
     }
     if (attributes != 1) {
-	fprintf(stderr, 
-		"READNODEVECTOR: unexpected number of attributes\n");
-	arch_bail();
+  fprintf(stderr, 
+    "READNODEVECTOR: unexpected number of attributes\n");
+  arch_bail();
     }
-    for (i=0; i<n; i++) {	
-	fscanf(packfile, "%lf", &v[i]);
+    for (i=0; i<n; i++) { 
+  fscanf(packfile, "%lf", &v[i]);
     }
 }
 /*--------------------------------------------------------------------------*/ 
@@ -1097,17 +1087,17 @@ void arch_readelemvector(double *v, int n) {
     
     fscanf(packfile, "%d %d\n", &type, &attributes);
     if (type != 1) {
-	fprintf(stderr, 
-		"READELEMVECTOR: unexpected data type\n");
-	arch_bail();
+  fprintf(stderr, 
+    "READELEMVECTOR: unexpected data type\n");
+  arch_bail();
     }
     if (attributes != 1) {
-	fprintf(stderr, 
-		"READELEMVECTOR: unexpected number of attributes\n");
-	arch_bail();
+  fprintf(stderr, 
+    "READELEMVECTOR: unexpected number of attributes\n");
+  arch_bail();
     }
-    for (i=0; i<n; i++) {	
-	fscanf(packfile, "%lf", &v[i]);
+    for (i=0; i<n; i++) { 
+  fscanf(packfile, "%lf", &v[i]);
     }
 }
 /*--------------------------------------------------------------------------*/ 
@@ -1122,14 +1112,14 @@ void arch_readdouble(double *v) {
     
     fscanf(packfile, "%d %d\n", &type, &attributes);
     if (type != 3) {
-	fprintf(stderr, 
-		"READDOUBLE: unexpected data type\n");
-	arch_bail();
+  fprintf(stderr, 
+    "READDOUBLE: unexpected data type\n");
+  arch_bail();
     }
     if (attributes != 1) {
-	fprintf(stderr, 
-		"READDOUBLE: unexpected number of attributes\n");
-	arch_bail();
+  fprintf(stderr, 
+    "READDOUBLE: unexpected number of attributes\n");
+  arch_bail();
     }
     fscanf(packfile, "%lf", &v[0]);
 }
@@ -1152,7 +1142,7 @@ void readpackfile(FILE *packfile, struct options *op) {
   /* only one subdomain allowed */
   if (ARCHsubdomains != 1) {
     fprintf(stderr, "quake: too many subdomains(%d), rerun slice using -s1\n",
-	    ARCHsubdomains);
+      ARCHsubdomains);
     arch_bail();
   }
 
@@ -1199,7 +1189,7 @@ void readpackfile(FILE *packfile, struct options *op) {
     ARCHvertex[i] = (int *) malloc(4 * sizeof(int));
 
   for (i=0; i<ARCHelems; i++) {
-    fscanf(packfile, "%d", &ARCHglobalelem[i]);	
+    fscanf(packfile, "%d", &ARCHglobalelem[i]); 
     for (j=0; j<ARCHcorners; j++) {
       fscanf(packfile, "%d", &ARCHvertex[i][j]);
     }
@@ -1231,9 +1221,9 @@ void readpackfile(FILE *packfile, struct options *op) {
     fscanf(packfile, "%d", &ARCHmatrixcol[i]);
     while (oldrow < newrow) { 
       if (oldrow+1 >= ARCHnodes+1) {
-	printf("quake: error: (1)idx buffer too small (%d >= %d)\n", 
-	       oldrow+1, ARCHnodes+1);
-	arch_bail();
+  printf("quake: error: (1)idx buffer too small (%d >= %d)\n", 
+         oldrow+1, ARCHnodes+1);
+  arch_bail();
       }
       ARCHmatrixindex[++oldrow] = i;
     }
@@ -1259,7 +1249,7 @@ void arch_init(int argc, char **argv, struct options *op)
 
   /* parse the command line options */
   arch_parsecommandline(argc, argv, op);
-	
+  
   /* read the pack file */
   packfile = stdin;
   readpackfile(packfile, op);
@@ -1277,25 +1267,24 @@ void smvp(int nodes, double (*A)[3][3], int *Acol, int *Aindex,
   int i,j;
   int Anext, Alast, col;
   double sum0, sum1, sum2;
-
+ //tic1=omp_get_wtime();
+  #pragma omp parallel for private(i,j) collapse(2) firstprivate(numthreads,nodes) shared(w2)
   for (j = 0; j < numthreads; j++) {
     for (i = 0; i < nodes; i++) {
       w2[j][i] = 0;
     }
   }
 
-#pragma omp parallel private(my_cpu_id,i,Anext,Alast,col,sum0,sum1,sum2)
+  tic1=omp_get_wtime();
+#pragma omp parallel private(my_cpu_id) shared(Aindex,w2,w1,A)
 {
 #ifdef _OPENMP
   my_cpu_id = omp_get_thread_num();
 #else
    my_cpu_id=0;
 #endif
-
-  // double* w1First = (double *) malloc(nodes * sizeof(double));
-  // double* w1Second = (double *) malloc(nodes * sizeof(double));
-  // double* w1Third = (double *) malloc(nodes * sizeof(double));
-  #pragma omp for schedule(static)
+   //printf("CPUID%d\n",my_cpu_id);
+ #pragma omp for private(i,Anext,Alast,col,sum0,sum1,sum2) firstprivate(nodes) 
   for (i = 0; i < nodes; i++) {
     Anext = Aindex[i];
     Alast = Aindex[i + 1];
@@ -1313,10 +1302,10 @@ void smvp(int nodes, double (*A)[3][3], int *Acol, int *Aindex,
       sum2 += A[Anext][2][0]*v[col][0] + A[Anext][2][1]*v[col][1] + A[Anext][2][2]*v[col][2];
 
       if (w2[my_cpu_id][col] == 0) {
-	w2[my_cpu_id][col] = 1;
-	w1[my_cpu_id][col].first = 0.0;
-	w1[my_cpu_id][col].second = 0.0;
-	w1[my_cpu_id][col].third = 0.0;
+  w2[my_cpu_id][col] = 1;
+  w1[my_cpu_id][col].first = 0.0;
+  w1[my_cpu_id][col].second = 0.0;
+  w1[my_cpu_id][col].third = 0.0;
       }
       
       w1[my_cpu_id][col].first += A[Anext][0][0]*v[i][0] + A[Anext][1][0]*v[i][1] + A[Anext][2][0]*v[i][2];
@@ -1335,21 +1324,21 @@ void smvp(int nodes, double (*A)[3][3], int *Acol, int *Aindex,
     w1[my_cpu_id][i].first += sum0;
     w1[my_cpu_id][i].second += sum1;
     w1[my_cpu_id][i].third += sum2;
+  }  
+}
+toc1=omp_get_wtime();
+
+#pragma omp parallel for private(i,j) collapse(2) firstprivate(nodes,numthreads) shared(w,w1,w2)
+  for (i = 0; i < nodes; i++) {
+    for (j = 0; j < numthreads; j++) {
+      if (w2[j][i]) {
+  w[i][0] += w1[j][i].first;
+  w[i][1] += w1[j][i].second;
+  w[i][2] += w1[j][i].third;
+      }
+    }
   }
 
-  
-  
-  for (i = 0; i < nodes; i++) {
-    if (w2[my_cpu_id][i]) {
-    #pragma omp critical
-    {
-	w[i][0] += w1[my_cpu_id][i].first;
-	w[i][1] += w1[my_cpu_id][i].second;
-	w[i][2] += w1[my_cpu_id][i].third;
-    }  
-  }
-  }
-  }
 }
 
 
@@ -1612,4 +1601,4 @@ int i, j, k;
     }
   }
 }
-/*--------------------------------------------------------------------------*/ 
+/*--------------------------------------------------------------------------*/
