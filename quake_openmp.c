@@ -517,7 +517,7 @@ if (Src.sourcenode != 0) {
             fprintf(stderr, "\n");
 
             for (iter = 1; iter <= timesteps; iter++) {
-              #pragma omp parallel for private(i,j)// firstprivate(ARCHnodes,disptplus) 
+              #pragma omp parallel for private(i,j)
               for (i = 0; i < ARCHnodes; i++)
                 for (j = 0; j < 3; j++)
                   disp[disptplus][i][j] = 0.0;
@@ -526,7 +526,7 @@ if (Src.sourcenode != 0) {
                  disp[dispt], disp[disptplus]);
 
               time = iter * Exc.dt;
-              #pragma omp parallel for private(i,j)// firstprivate(ARCHnodes,disptplus) 
+              #pragma omp parallel for private(i,j)
               for (i = 0; i < ARCHnodes; i++)
               {
                 for (j = 0; j < 3; j++)
@@ -1267,7 +1267,7 @@ if (Src.sourcenode != 0) {
                 int i,j;
                 int Anext, Alast, col;
                 double sum0, sum1, sum2;
-                #pragma omp parallel for private(i,j) collapse(2) firstprivate(numthreads,nodes) shared(w2)
+                #pragma omp parallel for private(i,j) collapse(2) shared(w2,numthreads,nodes) //firstprivate(numthreads,nodes) 
                 for (j = 0; j < numthreads; j++) {
                   for (i = 0; i < nodes; i++) {
                     w2[j][i] = 0;
@@ -1282,7 +1282,7 @@ if (Src.sourcenode != 0) {
                 #else
                   my_cpu_id=0;
                 #endif
-                #pragma omp for private(i,Anext,Alast,col,sum0,sum1,sum2) firstprivate(nodes) 
+                #pragma omp for private(i,Anext,Alast,col,sum0,sum1,sum2) shared(nodes) 
                 for (i = 0; i < nodes; i++) {
                   Anext = Aindex[i];
                   Alast = Aindex[i + 1];
@@ -1326,7 +1326,7 @@ if (Src.sourcenode != 0) {
                 }
                 toc1=omp_get_wtime();
 
-                #pragma omp parallel for private(i,j) collapse(2) firstprivate(nodes,numthreads) shared(w,w1,w2)
+                #pragma omp parallel for private(i,j) collapse(2) shared(w,w1,w2,nodes,numthreads)
                 for (i = 0; i < nodes; i++) {
                   for (j = 0; j < numthreads; j++) {
                     if (w2[j][i]) {
