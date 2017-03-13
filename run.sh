@@ -7,6 +7,6 @@
 
 OMP_NUM_THREADS=1
 export OMP_NUM_THREADS
-
-gcc -fopenmp -o quake quake_openmp.c -lm
+# module load gcc
+# gcc -fopenmp -o quake quake_openmp.c -lm
 ./quake < quake.in > quake1.log
