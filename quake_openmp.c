@@ -588,8 +588,8 @@ if (Src.sourcenode != 0) {
               fprintf(stderr, "Done. Terminating the simulation.\n");
             }
             toc=omp_get_wtime();
-            printf("TotalElapsed: %f seconds\n\n", (double)(toc - tic)  );
-            printf("Elapsed: %f seconds\n\n", (double)(toc1 - tic1) );
+            //printf("TotalElapsed: %f seconds\n\n", (double)(toc - tic)  );
+            //printf("Elapsed: %f seconds\n\n", (double)(toc1 - tic1) );
             return 0;
           }
 /* --------------------------------------------------------------------------*/
