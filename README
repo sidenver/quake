@@ -15,9 +15,11 @@ gcc -fopenmp -pg -o quake quake.c -lm
 2. quake_openmp.c
 
 gcc -fopenmp -pg -o quake quake_openmp.c -lm
+sbatch run1.sh
 sbatch run16.sh
 squeue -u USER
 
 
 To check the correctness:
+diff quakeTruth.log quake1.log
 diff quakeTruth.log quake16.log
