@@ -1,0 +1,23 @@
+How to run quake.c and quake_openmp.c
+===
+
+login to:
+USER@login.deepthought2.umd.edu
+
+module load gcc
+
+1. quake.c
+
+gcc -fopenmp -pg -o quake quake.c -lm
+./quake < quake.in > quakeTruth.log
+
+
+2. quake_openmp.c
+
+gcc -fopenmp -pg -o quake quake_openmp.c -lm
+sbatch run16.sh
+squeue -u USER
+
+
+To check the correctness:
+diff quakeTruth.log quake16.log
